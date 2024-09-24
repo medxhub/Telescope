@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Inventory Search</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Search Server Inventory</h1>
+	 <div class="server-list">
+        <h2>Registered Servers</h2>
+        <ul>
+            {% for server in servers %}
+                <li>{{ server }} - {{ servers[server]['system'] }} {{ servers[server]['release'] }}</li>
+            {% else %}
+                <li>No servers registered.</li>
+            {% endfor %}
+        </ul>
+    	</div>
+        <form id="searchForm">
+            <div class="mb-3">
+                <label for="query" class="form-label">Search Query</label>
+                <input type="text" class="form-control" id="query" placeholder="Enter user, package, or binary name" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="search_type" class="form-label">Search Type</label>
+                <select class="form-select" id="search_type">
+                    <option value="user">User</option>
+                    <option value="package">Package</option>
+                    <option value="binary">Binary</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+
+        <div class="mt-5">
+            <h2>Search Results</h2>
+            <ul id="results" class="list-group"></ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let query = document.getElementById('query').value;
+            let search_type = document.getElementById('search_type').value;
+
+            fetch(`/search?query=${encodeURIComponent(query)}&search_type=${encodeURIComponent(search_type)}`)
+                .then(response => response.json())
+                .then(results => {
+                    let resultsContainer = document.getElementById('results');
+                    resultsContainer.innerHTML = '';
+
+                    if (results.length > 0) {
+                        results.forEach(result => {
+                            let listItem = document.createElement('li');
+                            listItem.classList.add('list-group-item');
+
+                            if (search_type === 'user') {
+                                listItem.textContent = `User: ${result.user} (Server: ${result.server})`;
+                            } else if (search_type === 'package') {
+                                listItem.textContent = `Package: ${result.package} (Server: ${result.server})`;
+                            } else if (search_type === 'binary') {
+                                listItem.textContent = `Binary: ${result.binary} (Version: ${result.version}, Server: ${result.server})`;
+                            }
+
+                            resultsContainer.appendChild(listItem);
+                        });
+                    } else {
+                        let noResults = document.createElement('li');
+                        noResults.classList.add('list-group-item');
+                        noResults.textContent = 'No results found';
+                        resultsContainer.appendChild(noResults);
+                    }
+                });
+        });
+    </script>
+</body>
+</html>
+
